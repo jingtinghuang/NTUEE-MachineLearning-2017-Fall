@@ -92,7 +92,7 @@ def main():
 
     gd(train,label)
 
-    np.savetxt("./weight.txt", weight)
+    np.savetxt("./log_weight.txt", weight)
 
 
 

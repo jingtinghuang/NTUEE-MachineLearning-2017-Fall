@@ -36,6 +36,10 @@ def build_model(users, movies, f=factors_num):
     MB = Embedding(movies,1,input_length=1)(m_in)
     MB = Flatten()(MB)
     M = Flatten()(M)
+    # g = Input(shape = (None,))
+    
+
+
     '''beyond strong baseline'''
     M = Dropout(0.5)(M)
     UM = Concatenate()([U,M])
@@ -63,9 +67,41 @@ def main():
     users = pd.read_csv("users.csv",delimiter = "::",engine='python')
     users.replace("M", 1, inplace=True)
     users.replace("F", 0, inplace=True)
+    movies = movies['Genres']
+    movies = movies.str.split('|',1,expand = True)
     train = pd.DataFrame.as_matrix(train)
-    test = pd.DataFrame.as_matrix(test)
+    num_movies = np.max(train[:,2])
+    num_users = np.max(train[:,1])
     movies = pd.DataFrame.as_matrix(movies)
+    y = np.zeros((num_movies,))
+    #y = np.zeros((movie.shape[0],))
+    lul = {
+        'Action':0,
+	    'Adventure' :1,
+	    'Animation':2,
+	    "Children's":3,
+	    'Comedy':4,
+        'Crime':5,
+	    'Documentary':6,
+	    'Drama':7,
+	    'Fantasy':8,
+	    'Film-Noir':9,
+	    'Horror':10,
+	    'Musical':11,
+	    'Mystery':12,
+	    'Romance':13,
+	    'Sci-Fi':14,
+	    'Thriller':15,
+	    'War':16,
+	    'Western':17
+    }
+    
+    i = 0
+    for a in movies:
+        y[i] = lul[a[0]]
+        i += 1
+    print(y[:10])
+    test = pd.DataFrame.as_matrix(test)
     users = pd.DataFrame.as_matrix(users)
     
     
@@ -82,16 +118,28 @@ def main():
     
     Users = train[:,1]
     Users -= 1
+
+    genre = []
+
     np.random.seed(0)
     np.random.shuffle(Users)
-    users_val = Users[:80000]
-    Users = Users[80000:]
     
-
+    
+    print(len(y))
     Movies = train[:,2]
     Movies -= 1 
     np.random.seed(0)
     np.random.shuffle(Movies)
+    gender = []
+    for ggg in Users:
+        gender.append(1)
+    for x in Movies:
+        genre.append(y[x])
+    genre = np.array(genre)
+    genre_val = genre[:80000]
+    genre = genre[80000:] 
+    users_val = Users[:80000]
+    Users = Users[80000:]
     movies_val = Movies[:80000]
     Movies = Movies[80000:]
 
@@ -109,6 +157,8 @@ def main():
     val_label = label[:80000]
     label = label[80000:]
 
+
+
     
 
     
@@ -124,6 +174,10 @@ def main():
              ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=2,min_lr=0)]
     history = model.fit([Users, Movies], label, epochs=epochs,
         batch_size=batch_size, validation_data=([users_val, movies_val],val_label),callbacks=callbacks)
+    '''
+    history = model.fit([Users, Movies,genre,gender], label, epochs=epochs,
+        batch_size=batch_size, validation_data=([users_val, movies_val],val_label),callbacks=callbacks)
+    '''
 
     
     # model.save("./MF"+str(factors_num)+".h5")
